@@ -9,20 +9,23 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import useTokenStore from "@/store";
 import { useMutation } from "@tanstack/react-query";
+import { LoaderCircle } from "lucide-react";
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const setToken = useTokenStore((state) => state.setToken);
 
   const emailRef = React.useRef<HTMLInputElement>(null);
   const passwordRef = React.useRef<HTMLInputElement>(null);
 
   const mutation = useMutation({
     mutationFn: login,
-    onSuccess: (data) => {
-      console.log("Login successful:", data);
+    onSuccess: (response: any) => {
+      setToken(response.data.accessToken);
       navigate("/dashboard/home");
     },
   });
@@ -45,7 +48,12 @@ const LoginPage = () => {
         <CardHeader>
           <CardTitle>Login to your account</CardTitle>
           <CardDescription>
-            Enter your email below to login to your account
+            Enter your email below to login to your account <br />
+            {mutation.isError && (
+              <span className="text-red-500 text-sm">
+                {mutation.error.message}
+              </span>
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -79,7 +87,15 @@ const LoginPage = () => {
                 />
               </div>
               <div className="flex flex-col gap-3">
-                <Button type="submit" className="w-full" onClick={handleLogin}>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  onClick={handleLogin}
+                  disabled={mutation.isPending}
+                >
+                  {mutation.isPending && (
+                    <LoaderCircle className="animate-spin" />
+                  )}
                   Sign in
                 </Button>
               </div>
