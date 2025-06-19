@@ -24,6 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import type { Book } from "@/types";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,12 +34,14 @@ import {
 } from "@radix-ui/react-dropdown-menu";
 import { useQuery } from "@tanstack/react-query";
 import { CirclePlus, MoreHorizontal, Table } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const BooksPage = () => {
   //@ts-ignore
   const { data, isLoading, isError } = useQuery({
     queryKey: ["books"],
     queryFn: getBooks,
+    staleTime: 10000, // 10 seconds
   });
 
   return (
@@ -55,10 +58,12 @@ const BooksPage = () => {
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
-        <Button>
-          <CirclePlus size={20} />
-          <span className="ml-2">Add book</span>
-        </Button>
+        <Link to="/dashboard/books/create">
+          <Button>
+            <CirclePlus size={20} />
+            <span className="ml-2">Add book</span>
+          </Button>
+        </Link>
       </div>
 
       <Card className="mt-6">
@@ -90,50 +95,54 @@ const BooksPage = () => {
             </TableHeader>
             <TableBody>
               {/* @ts-ignore */}
-              {data?.data.map((book: Book) => {
-                return (
-                  <TableRow key={book._id}>
-                    <TableCell className="hidden sm:table-cell">
-                      <img
-                        alt={book.title}
-                        className="aspect-square rounded-md object-cover"
-                        height="64"
-                        src={book.coverImage}
-                        width="64"
-                      />
-                    </TableCell>
-                    <TableCell className="font-medium">{book.title}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{book.genre}</Badge>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      {book.author.name}
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      {book.createdAt}
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            aria-haspopup="true"
-                            size="icon"
-                            variant="ghost"
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Toggle menu</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem>Edit</DropdownMenuItem>
-                          <DropdownMenuItem>Delete</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
+              {data?.data?.length > 0 &&
+                // @ts-ignore
+                data?.data?.map((book: Book) => {
+                  return (
+                    <TableRow key={book._id}>
+                      <TableCell className="hidden sm:table-cell">
+                        <img
+                          alt={book.title}
+                          className="aspect-square rounded-md object-cover"
+                          height="64"
+                          src={book.coverImage}
+                          width="64"
+                        />
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {book.title}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{book.genre}</Badge>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {book.author.name}
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {book.createdAt}
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              aria-haspopup="true"
+                              size="icon"
+                              variant="ghost"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Toggle menu</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuItem>Edit</DropdownMenuItem>
+                            <DropdownMenuItem>Delete</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
             </TableBody>
           </Table>
         </CardContent>
