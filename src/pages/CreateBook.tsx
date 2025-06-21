@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -26,6 +27,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
+import { useMutation } from "@tanstack/react-query";
+import { createBook } from "@/APIs/api";
 
 const formSchema = z.object({
   title: z.string().min(2, {
@@ -46,19 +49,35 @@ const formSchema = z.object({
 });
 
 const CreateBook = () => {
-  const form = useForm({
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       title: "",
       genre: "",
       description: "",
-      coverImage: null,
-      file: null,
+    },
+  });
+
+  const coverImageRef = form.register("coverImage");
+  const fileRef = form.register("file");
+
+  const mutation = useMutation({
+    mutationFn: createBook,
+    onSuccess: () => {
+      console.log("Book created successfully");
     },
   });
 
   const onSubmit = (data: z.infer<typeof formSchema>) => {
     console.log("Form Data:", data);
-    // Handle form submission logic here, e.g., send data to the server
+    const fromdata = new FormData();
+    fromdata.append("title", data.title);
+    fromdata.append("genre", data.genre);
+    fromdata.append("description", data.description);
+    fromdata.append("coverImage", data.coverImage[0]);
+    fromdata.append("file", data.file[0]);
+    mutation.mutate(fromdata);
+    form.reset();
   };
 
   return (
@@ -148,7 +167,7 @@ const CreateBook = () => {
                         <Input
                           type="file"
                           className="w-full"
-                          // {...coverImageRef}
+                          {...coverImageRef}
                         />
                       </FormControl>
                       <FormMessage />
@@ -163,7 +182,7 @@ const CreateBook = () => {
                     <FormItem>
                       <FormLabel>Book File</FormLabel>
                       <FormControl>
-                        <Input type="file" className="w-full" />
+                        <Input type="file" className="w-full" {...fileRef} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
