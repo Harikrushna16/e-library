@@ -3,7 +3,7 @@ import useTokenStore from "@/store";
 
 const api = axios.create({
   // todo: move this value to env variable.
-  baseURL: import.meta.env.VITE_PUBLIC_BACKEND_URL,
+  baseURL: "http://localhost:8416",
   headers: {
     "Content-Type": "application/json",
   },
@@ -12,6 +12,9 @@ const api = axios.create({
 api.interceptors.request.use((config) => {
   const token = useTokenStore.getState().token;
   if (token) {
+    if (!config.headers) {
+      config.headers = {};
+    }
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;

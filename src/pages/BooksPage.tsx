@@ -1,4 +1,3 @@
-import { getBooks } from "@/APIs/api";
 import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
@@ -18,30 +17,31 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { Book } from "@/types";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "@radix-ui/react-dropdown-menu";
+import { getBooks } from "@/APIs/api";
 import { useQuery } from "@tanstack/react-query";
-import { CirclePlus, MoreHorizontal, Table } from "lucide-react";
+import { CirclePlus, MoreHorizontal } from "lucide-react";
 import { Link } from "react-router-dom";
+import type { Book } from "@/types";
 
 const BooksPage = () => {
-  //@ts-ignore
   const { data, isLoading, isError } = useQuery({
     queryKey: ["books"],
     queryFn: getBooks,
-    staleTime: 10000, // 10 seconds
+    staleTime: 10000, // in Milli-seconds
   });
 
   return (
@@ -95,54 +95,57 @@ const BooksPage = () => {
             </TableHeader>
             <TableBody>
               {/* @ts-ignore */}
-              {data?.data?.length > 0 &&
-                // @ts-ignore
-                data?.data?.map((book: Book) => {
-                  return (
-                    <TableRow key={book._id}>
-                      <TableCell className="hidden sm:table-cell">
-                        <img
-                          alt={book.title}
-                          className="aspect-square rounded-md object-cover"
-                          height="64"
-                          src={book.coverImage}
-                          width="64"
-                        />
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        {book.title}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{book.genre}</Badge>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {book.author.name}
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {book.createdAt}
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              aria-haspopup="true"
-                              size="icon"
-                              variant="ghost"
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Toggle menu</span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem>Edit</DropdownMenuItem>
-                            <DropdownMenuItem>Delete</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
+              {data?.data.map((book: Book) => {
+                return (
+                  <TableRow key={book._id}>
+                    <TableCell className="hidden sm:table-cell">
+                      <img
+                        alt={book.title}
+                        className="aspect-square rounded-md object-cover"
+                        height="64"
+                        src={book.coverImage}
+                        width="64"
+                      />
+                    </TableCell>
+                    <TableCell className="font-medium">{book.title}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{book.genre}</Badge>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      {book.author.name}
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      {new Date(book.createdAt).toLocaleString("en-US", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                        hour: "numeric",
+                        minute: "2-digit",
+                        hour12: true,
+                      })}
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            aria-haspopup="true"
+                            size="icon"
+                            variant="ghost"
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Toggle menu</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuItem>Edit</DropdownMenuItem>
+                          <DropdownMenuItem>Delete</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </CardContent>

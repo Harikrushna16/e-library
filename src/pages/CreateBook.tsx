@@ -27,8 +27,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createBook } from "@/APIs/api";
+import { LoaderCircle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const formSchema = z.object({
   title: z.string().min(2, {
@@ -40,12 +42,28 @@ const formSchema = z.object({
   description: z.string().min(2, {
     message: "Description must be at least 2 characters.",
   }),
-  coverImage: z.instanceof(FileList).refine((file) => {
-    return file.length == 1;
-  }, "Cover Image is required"),
-  file: z.instanceof(FileList).refine((file) => {
-    return file.length == 1;
-  }, "Book PDF is required"),
+  coverImage: z
+    .instanceof(FileList)
+    .refine((file) => file.length === 1, "Cover Image is required")
+    .refine(
+      (file) => file[0]?.type.startsWith("image/"),
+      "Cover image must be an image file"
+    )
+    .refine(
+      (file) => file[0]?.size <= 5 * 1024 * 1024, // 5MB
+      "Cover image must be less than 5MB"
+    ),
+  file: z
+    .instanceof(FileList)
+    .refine((file) => file.length === 1, "Book PDF is required")
+    .refine(
+      (file) => file[0]?.type === "application/pdf",
+      "Book file must be a PDF"
+    )
+    .refine(
+      (file) => file[0]?.size <= 50 * 1024 * 1024, // 50MB
+      "Book file must be less than 50MB"
+    ),
 });
 
 const CreateBook = () => {
@@ -61,23 +79,39 @@ const CreateBook = () => {
   const coverImageRef = form.register("coverImage");
   const fileRef = form.register("file");
 
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
   const mutation = useMutation({
     mutationFn: createBook,
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["books"] });
       console.log("Book created successfully");
+      form.reset();
+      navigate("/dashboard/books");
+    },
+    onError: (error) => {
+      console.error("Error creating book:", error);
+      // You might want to show an error toast here
     },
   });
 
   const onSubmit = (data: z.infer<typeof formSchema>) => {
     console.log("Form Data:", data);
-    const fromdata = new FormData();
-    fromdata.append("title", data.title);
-    fromdata.append("genre", data.genre);
-    fromdata.append("description", data.description);
-    fromdata.append("coverImage", data.coverImage[0]);
-    fromdata.append("file", data.file[0]);
-    mutation.mutate(fromdata);
-    form.reset();
+    const formData = new FormData();
+    formData.append("title", data.title);
+    formData.append("genre", data.genre);
+    formData.append("description", data.description);
+    formData.append("coverImage", data.coverImage[0]);
+    formData.append("file", data.file[0]);
+
+    // Log FormData contents for debugging
+    console.log("FormData contents:");
+    for (let [key, value] of formData.entries()) {
+      console.log(key, value);
+    }
+
+    mutation.mutate(formData);
   };
 
   return (
@@ -101,8 +135,17 @@ const CreateBook = () => {
               </BreadcrumbList>
             </Breadcrumb>
             <div className="flex items-center gap-4">
-              <Button>Submit</Button>
-              <Button variant="outline">Cancel</Button>
+              <Button type="submit" disabled={mutation.isPending}>
+                {mutation.isPending && (
+                  <LoaderCircle className="animate-spin" />
+                )}
+                <span className={`${mutation.isPending && "ml-1"}`}>
+                  Submit
+                </span>
+              </Button>
+              <Button variant="outline" type="button">
+                Cancel
+              </Button>
             </div>
           </div>
 
@@ -167,6 +210,7 @@ const CreateBook = () => {
                         <Input
                           type="file"
                           className="w-full"
+                          accept="image/*"
                           {...coverImageRef}
                         />
                       </FormControl>
@@ -182,7 +226,12 @@ const CreateBook = () => {
                     <FormItem>
                       <FormLabel>Book File</FormLabel>
                       <FormControl>
-                        <Input type="file" className="w-full" {...fileRef} />
+                        <Input
+                          type="file"
+                          className="w-full"
+                          accept=".pdf"
+                          {...fileRef}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
