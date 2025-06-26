@@ -38,7 +38,7 @@ import { Link } from "react-router-dom";
 import type { Book } from "@/types";
 
 const BooksPage = () => {
-  const { data, isLoading, isError } = useQuery({
+  const { data } = useQuery({
     queryKey: ["books"],
     queryFn: getBooks,
     staleTime: 10000, // in Milli-seconds
@@ -138,7 +138,9 @@ const BooksPage = () => {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem>Edit</DropdownMenuItem>
+                          <Link to={`/dashboard/books/edit/${book._id}`}>
+                            <DropdownMenuItem>Edit</DropdownMenuItem>
+                          </Link>
                           <DropdownMenuItem>Delete</DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
