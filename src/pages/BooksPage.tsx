@@ -31,18 +31,36 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getBooks } from "@/APIs/api";
+import { deleteBook, getBooks } from "@/APIs/api";
 import { useQuery } from "@tanstack/react-query";
 import { CirclePlus, MoreHorizontal } from "lucide-react";
 import { Link } from "react-router-dom";
 import type { Book } from "@/types";
+import { AlertBox } from "@/components/ui/AlertBox";
+import { useState } from "react";
 
 const BooksPage = () => {
-  const { data } = useQuery({
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
+
+  const { data, refetch } = useQuery({
     queryKey: ["books"],
     queryFn: getBooks,
-    staleTime: 10000, // in Milli-seconds
+    staleTime: 10000,
   });
+
+  const handleDeleteClick = (book: Book) => {
+    setSelectedBook(book);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleBookDelete = async () => {
+    if (!selectedBook) return;
+    await deleteBook(selectedBook._id);
+    setDeleteDialogOpen(false);
+    setSelectedBook(null);
+    refetch();
+  };
 
   return (
     <div>
@@ -82,9 +100,7 @@ const BooksPage = () => {
                 </TableHead>
                 <TableHead>Title</TableHead>
                 <TableHead>Genre</TableHead>
-                <TableHead className="hidden md:table-cell">
-                  Author name
-                </TableHead>
+                <TableHead className="hidden md:table-cell">Author</TableHead>
                 <TableHead className="hidden md:table-cell">
                   Created at
                 </TableHead>
@@ -94,69 +110,85 @@ const BooksPage = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {/* @ts-ignore */}
-              {data?.data.map((book: Book) => {
-                return (
-                  <TableRow key={book._id}>
-                    <TableCell className="hidden sm:table-cell">
-                      <img
-                        alt={book.title}
-                        className="aspect-square rounded-md object-cover"
-                        height="64"
-                        src={book.coverImage}
-                        width="64"
-                      />
-                    </TableCell>
-                    <TableCell className="font-medium">{book.title}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{book.genre}</Badge>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      {book.author.name}
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      {new Date(book.createdAt).toLocaleString("en-US", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                        hour: "numeric",
-                        minute: "2-digit",
-                        hour12: true,
-                      })}
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            aria-haspopup="true"
-                            size="icon"
-                            variant="ghost"
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Toggle menu</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <Link to={`/dashboard/books/edit/${book._id}`}>
-                            <DropdownMenuItem>Edit</DropdownMenuItem>
-                          </Link>
-                          <DropdownMenuItem>Delete</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
+              {data?.data.map((book: Book) => (
+                <TableRow key={book._id}>
+                  <TableCell className="hidden sm:table-cell">
+                    <img
+                      alt={book.title}
+                      className="aspect-square rounded-md object-cover"
+                      height="64"
+                      src={book.coverImage}
+                      width="64"
+                    />
+                  </TableCell>
+                  <TableCell className="font-medium">{book.title}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{book.genre}</Badge>
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    {book.author.name}
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    {new Date(book.createdAt).toLocaleString("en-US", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                      hour: "numeric",
+                      minute: "2-digit",
+                      hour12: true,
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          aria-haspopup="true"
+                          size="icon"
+                          variant="ghost"
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Toggle menu</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <Link to={`/dashboard/books/edit/${book._id}`}>
+                          <DropdownMenuItem>Edit</DropdownMenuItem>
+                        </Link>
+                        <DropdownMenuItem
+                          onClick={() => handleDeleteClick(book)}
+                        >
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </CardContent>
         <CardFooter>
           <div className="text-xs text-muted-foreground">
-            Showing <strong>1-10</strong> of <strong>32</strong> products
+            Showing <strong>1-10</strong> of{" "}
+            <strong>{data?.data.length || 0}</strong> books
           </div>
         </CardFooter>
       </Card>
+
+      {/* Dialog outside of dropdown */}
+      {selectedBook && (
+        <AlertBox
+          title="Delete Book"
+          description={`Are you sure you want to delete "${selectedBook.title}"?`}
+          isOpen={deleteDialogOpen}
+          onClose={() => {
+            setDeleteDialogOpen(false);
+            setSelectedBook(null);
+          }}
+          onConfirm={handleBookDelete}
+        />
+      )}
     </div>
   );
 };
