@@ -7,8 +7,13 @@ import BooksPage from "./pages/BooksPage";
 import AuthLayout from "./layouts/AuthLayout";
 import CreateBook from "./pages/CreateBook";
 import UpdateBook from "./pages/UpdateBook";
+import { Navigate } from "react-router-dom";
 
 export const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <Navigate to="/dashboard/home" replace />,
+  },
   {
     path: "dashboard",
     element: <DashboardLayout />,
